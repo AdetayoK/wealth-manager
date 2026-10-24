@@ -212,7 +212,18 @@ async function viewResearch(head) {
       field("cash","Cash balance","number","",{step:"any",optional:true}),
       field("shares_outstanding","Shares outstanding","number","",{step:"any",optional:true}),
       field("source_url","Annual report URL","text","",{optional:true,wide:true}),
-    ],"Store financial statement") + "</div>" + note("A DCF does not provide an authoritative fair value. The result should be sensitivity-tested before use.");
+    ],"Store financial statement") + "</div>" +
+    section("Foreign investment attribution","Understand price gains separately from naira depreciation and dividends") +
+    form("foreign-attribution-form","Price versus currency contributions",[
+      field("opening_price","Opening security price (foreign currency)","number","100",{min:0.000001,step:"any"}),
+      field("closing_price","Closing security price","number","110",{min:0.000001,step:"any"}),
+      field("opening_fx","Opening NGN per foreign unit","number","1500",{min:0.000001,step:"any"}),
+      field("closing_fx","Closing NGN per foreign unit","number","1650",{min:0.000001,step:"any"}),
+      field("units","Units held throughout","number","10",{min:0.000001,step:"any"}),
+      field("dividends_per_unit","Dividends per unit (foreign currency)","number","0",{min:0,step:"any"}),
+      field("costs_ngn","Total costs (NGN)","number","0",{min:0,step:"any"}),
+    ],"Decompose my NGN return") + note("Price and FX return decomposition assumes no interim trades. Dividends use closing FX, not their actual historical conversion dates.") +
+    note("A DCF does not provide an authoritative fair value. The result should be sensitivity-tested before use.");
   bindCalc("dcf-form","/research/dcf", (v)=>({
     base_free_cash_flow:numeric(v.base_free_cash_flow,"FCF"),
     growth_pct:numeric(v.growth_pct,"growth"),discount_pct:numeric(v.discount_pct,"discount"),
@@ -223,6 +234,16 @@ async function viewResearch(head) {
       num(r.equity_value,2)+'</strong></div><div class="mini-metric"><label>Value / share</label><strong>'+
       num(r.fair_value_per_share,4)+'</strong></div><div class="mini-metric"><label>Terminal share</label><strong>'+
       pct(r.terminal_value_share_pct)+'</strong></div></div>'+json(r.forecast)+note(r.disclosure));
+  bindCalc("foreign-attribution-form","/attribution/foreign",(v)=>({
+    opening_price:numeric(v.opening_price,"opening price"),closing_price:numeric(v.closing_price,"closing price"),
+    opening_fx:numeric(v.opening_fx,"opening FX"),closing_fx:numeric(v.closing_fx,"closing FX"),
+    units:numeric(v.units,"units"),dividends_per_unit:numeric(v.dividends_per_unit,"dividends"),
+    costs_ngn:numeric(v.costs_ngn,"costs"),
+  }), (x)=>'<div class="metric-row"><div class="mini-metric"><label>Total NGN gain</label><strong>'+
+      money(x.total_gain_ngn)+'</strong></div><div class="mini-metric"><label>NGN return</label><strong>'+
+      pct(x.total_return_pct)+'</strong></div></div>'+
+      table(["Driver","Contribution (NGN)"],Object.entries(x.components).map(([k,v])=>[k.replaceAll("_"," "),money(v)]))+
+      note(x.assumptions.join(" • ")));
   bindCreate("fundamental-form","/fundamentals",(v)=> {
     const p={instrument_id:numeric(v.instrument_id,"security"),fiscal_year:numeric(v.fiscal_year,"year"),source_url:v.source_url};
     for(const k of ["revenue","net_income","free_cash_flow","total_debt","cash","shares_outstanding"]) p[k]=v[k]===""?null:numeric(v[k],k);
