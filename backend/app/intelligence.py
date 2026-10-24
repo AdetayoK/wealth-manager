@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from .analytics import goal_projection, momentum_signal, risk_from_aligned_returns
 from .finance import account_balance, balance_sheet, dec, fx_to_ngn, holdings, last_price, money
 from .models import (
-    Account, CashPlan, Decision, FundConstituent, Fundamental, Goal, Instrument,
+    Account, CashPlan, Decision, FundConstituent, Fundamental, FXRate, Goal, Instrument,
     MarketEvent, Price, TaxRule,
 )
 
