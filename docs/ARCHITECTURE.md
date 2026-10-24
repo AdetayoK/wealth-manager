@@ -57,7 +57,8 @@ All persisted money uses SQLAlchemy Numeric/Decimal. JSON financial output is ro
 - DCF exposes discount, growth, terminal and net-debt assumptions. Terminal value share is visible.
 - Technical momentum is descriptive, **not** a validated buy/sell signal.
 - Backtest accepts chronologically aligned supplied returns; it calculates an out-of-sample holdout but cannot detect data leakage upstream.
-- AI Analyst v0 is **a deterministic evidence briefing** linked to authoritative computation endpoints. No LLM is called and no financial data is sent to a third party.
+- AI Analyst defaults to **a deterministic evidence briefing** linked to authoritative calculation endpoints. A separate opt-in Responses API adapter sends only aggregate evidence and the user question to an externally configured provider, and only when the request explicitly consents; no account credentials or raw holdings are sent. Model output is non-authoritative.
+- ML evaluation uses standardized logistic regression, a chronological holdout and a user-specified future-label embargo, comparing Brier score with a constant-probability baseline. It is not a trained production predictor and cannot detect leakage from incorrectly timestamped features.
 
 ## Future target architecture
 
