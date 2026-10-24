@@ -743,3 +743,44 @@ async def import_prices(upload: UploadFile = File(...), db: Session = Depends(ge
             db.add(Price(instrument_id=iid, as_of=day, close=close, source=source))
     db.commit()
     return {"imported": len(validated), "deduplication": "instrument+date upsert"}
+
+
+# ML experiments are deliberately stateless; no data-mining job runs implicitly.
+class MLEvaluateIn(BaseModel):
+    feature_names: list[str] = Field(min_length=1, max_length=30)
+    dates: list[date] = Field(min_length=100, max_length=30000)
+    features: list[list[float]] = Field(min_length=100, max_length=30000)
+    labels: list[int] = Field(min_length=100, max_length=30000)
+    label_horizon: int = Field(default=5, ge=1, le=60)
+    holdout_fraction: float = Field(default=.25, ge=.15, le=.4)
+
+
+@router.post("/ml/evaluate")
+def ml_evaluate(payload: MLEvaluateIn):
+    from .ml import evaluate_classifier
+    try:
+        return evaluate_classifier(
+            payload.feature_names, payload.dates, payload.features, payload.labels,
+            payload.label_horizon, payload.holdout_fraction
+        )
+    except (ValueError, FloatingPointError) as exc:
+        invalid(exc)
+
+
+class AnalystQuestionIn(BaseModel):
+    question: str = Field(min_length=1, max_length=400)
+    consent_to_external_processing: bool
+
+
+@router.post("/analyst/ask")
+def ask_analyst(payload: AnalystQuestionIn, db: Session = Depends(get_db)):
+    from .assistant import AnalystProviderError, generate_analysis
+    evidence = evidence_brief(db)
+    try:
+        return generate_analysis(
+            payload.question, evidence, payload.consent_to_external_processing
+        )
+    except ValueError as exc:
+        invalid(exc)
+    except AnalystProviderError as exc:
+        raise HTTPException(503, str(exc)) from exc
