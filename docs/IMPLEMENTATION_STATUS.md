@@ -28,7 +28,7 @@ The analyst remains fully local unless an operator configures a server-side API 
 
 ## Data sources in the initial release
 
-**None are linked to external financial feeds.** Real holdings, prices, FX, fund constituent weights, cash flows and fundamentals require explicit manual entry or validated CSV import. Absence of data blocks or qualifies analysis.
+**No market feed is enabled automatically.** Real holdings, FX, fund constituent weights, cash flows and fundamentals require explicit manual entry or verified import. A manually triggered, API-key-gated Alpha Vantage adapter can retrieve raw daily closes for selected USD equities and US-listed ETFs, subject to the provider's terms; it is not split/dividend adjusted. NGX and other feeds remain manual until an authorized adapter is configured. Absence of required data blocks or qualifies analysis.
 
 ## Production acceptance gates
 
