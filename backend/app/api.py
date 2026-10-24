@@ -799,3 +799,26 @@ def sync_us_daily(payload: SyncUSPricesIn, db: Session = Depends(get_db)):
         invalid(exc)
     except MarketFeedError as exc:
         raise HTTPException(503, str(exc)) from exc
+
+# --- Cross-market return attribution ------------------------------------------------
+class ForeignAttributionIn(BaseModel):
+    opening_price: Decimal = Field(gt=0)
+    closing_price: Decimal = Field(gt=0)
+    opening_fx: Decimal = Field(gt=0, description="NGN per foreign currency unit at opening")
+    closing_fx: Decimal = Field(gt=0, description="NGN per foreign currency unit at closing")
+    units: Decimal = Field(default=Decimal("1"), gt=0)
+    dividends_per_unit: Decimal = Field(default=Decimal("0"), ge=0)
+    costs_ngn: Decimal = Field(default=Decimal("0"), ge=0)
+
+
+@router.post("/attribution/foreign")
+def foreign_return_attribution(payload: ForeignAttributionIn):
+    """Explain gains from foreign security movement vs NGN currency changes.
+
+    Signed-in and CSRF-protected through the main API router.
+    """
+    from .currency_attribution import attribute_foreign_return
+    try:
+        return attribute_foreign_return(**payload.model_dump())
+    except ValueError as exc:
+        invalid(exc)
