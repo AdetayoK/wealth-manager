@@ -94,6 +94,11 @@ async function renderDataWorkspace() {
       '<label>Price history CSV<input name="upload" type="file" accept=".csv,text/csv" required></label>'+
       '<button type="submit" class="primary">Validate and import CSV</button></form>'+output("csv-form-out"),
       "Source-identified prices")+
+    section("US securities price provider","Optional manually triggered source-labelled daily quote ingestion")+
+    form("us-price-sync","Sync a US-listed security",[
+      field("instrument_id","USD equity or US-listed ETF","select","",{options:instruments.filter((i)=>i.currency==="USD"&&(i.asset_class==="US_STOCK"||(i.asset_class==="ETF"&&["XNAS","XNYS","ARCX"].includes(i.exchange)))).map((i)=>[i.id,i.symbol+" • "+i.exchange])}),
+    ],"Sync latest supported daily closes")+
+    note("Requires ALPHAVANTAGE_API_KEY in the server .env. Raw end-of-day closes do not include dividend/split-adjusted total return; provider usage limits apply.")+
     section("Registered accounts","Trade funding comes out of the same-currency account")+
     panel(table(["Name","Currency","Kind","Available cash"],
       accounts.map((a)=>[a.name,a.currency,a.kind,money(a.balance,a.currency)])), "Cash inventory")+
@@ -119,6 +124,8 @@ async function renderDataWorkspace() {
     ...v,from_account_id:numeric(v.from_account_id,"source"),
     to_account_id:numeric(v.to_account_id,"destination"),amount:numeric(v.amount,"amount")
   }));
+  bindCalc("us-price-sync","/providers/us-daily-sync",(v)=>({instrument_id:numeric(v.instrument_id,"US security")}),
+    (r)=>"<p class=\"success-text\">Synchronized "+esc(r.rows)+" daily prices for "+esc(r.symbol)+".</p>"+json(r));
   const uploader=$("csv-form");
   uploader.addEventListener("submit",async (event)=>{
     event.preventDefault();
