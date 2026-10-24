@@ -784,3 +784,18 @@ def ask_analyst(payload: AnalystQuestionIn, db: Session = Depends(get_db)):
         invalid(exc)
     except AnalystProviderError as exc:
         raise HTTPException(503, str(exc)) from exc
+
+
+class SyncUSPricesIn(BaseModel):
+    instrument_id: int = Field(ge=1)
+
+
+@router.post("/providers/us-daily-sync")
+def sync_us_daily(payload: SyncUSPricesIn, db: Session = Depends(get_db)):
+    from .marketdata import MarketFeedError, sync_us_instrument
+    try:
+        return sync_us_instrument(db, payload.instrument_id)
+    except ValueError as exc:
+        invalid(exc)
+    except MarketFeedError as exc:
+        raise HTTPException(503, str(exc)) from exc
