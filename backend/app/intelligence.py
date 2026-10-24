@@ -316,25 +316,33 @@ def wealth_health(db: Session) -> dict:
     sheet, cash = balance_sheet(db), cashflow(db)
     risk = risk_report(db)
     goals = goals_overview(db)
+    has_assets = sheet["assets_ngn"] > 0
+    has_reserve = cash["emergency_reserve_ngn"] > 0
     scores = {
-        "liquidity": 100 if cash["emergency_reserve_ngn"] == 0 and cash["starting_cash_ngn"] > 0
-                     else min(100, max(0, 100 * cash["starting_cash_ngn"] /
-                             max(cash["emergency_reserve_ngn"], 1))),
+        "liquidity": min(100, max(0, 100 * cash["starting_cash_ngn"] /
+                              cash["emergency_reserve_ngn"]))
+                     if has_reserve and not cash["missing_fx_currencies"] else None,
         "concentration": max(0, 100 * (1 - risk["class_concentration_hhi"]))
                          if risk["class_concentration_hhi"] is not None else None,
         "goal_readiness": min(100, sum(min(1, g.get("goal_funding_ratio", 0)) for g in goals) /
-                              len(goals) * 100) if goals else None,
+                              len(goals) * 100) if goals and all("goal_funding_ratio" in g for g in goals) else None,
         "data_quality": max(0, 100 - 30 * len([x for x in sheet["data_issues"] if x["type"].startswith("MISSING")])
-                            - 5 * len([x for x in sheet["data_issues"] if x["type"].startswith("STALE")])),
+                            - 5 * len([x for x in sheet["data_issues"] if x["type"].startswith("STALE")]))
+                        if has_assets or sheet["data_issues"] else None,
     }
     weights = {"liquidity": .30, "concentration": .25, "goal_readiness": .35, "data_quality": .10}
     populated = {k: v for k, v in scores.items() if v is not None}
-    overall = sum(weights[k] * v for k, v in populated.items()) / sum(weights[k] for k in populated) if populated else None
+    # An overall score without assets or a planning goal would fabricate
+    # personal financial confidence out of absent information.
+    valid = has_assets and bool(goals) and sheet["complete"]
+    overall = (sum(weights[k] * v for k, v in populated.items()) /
+               sum(weights[k] for k in populated)) if populated and valid else None
     return {
         "score": round(overall, 1) if overall is not None else None,
         "dimensions": {k: round(v, 1) if v is not None else None for k, v in scores.items()},
         "unavailable": [k for k, v in scores.items() if v is None],
-        "disclosure": "A transparent planning heuristic, not a validated credit, portfolio or investment risk score. No historical real-return score without return attribution data.",
+        "confidence": "insufficient" if not valid else ("partial" if len(populated) < 4 else "baseline"),
+        "disclosure": "A transparent planning heuristic, not a validated financial or investment risk score. Missing assets, goal definitions or FX rates can suppress the total score.",
     }
 
 
