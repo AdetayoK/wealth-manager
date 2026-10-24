@@ -141,6 +141,10 @@ python -m pytest -q
 
 GitHub Actions runs pytest, Python bytecode compilation and `node --check` on the frontend JavaScript.
 
+## Optional US market-data synchronization
+
+Add an `ALPHAVANTAGE_API_KEY` to the **server-side** `.env` if you want the Data workspace to fetch recent US equity or US-listed ETF daily closes. Register the security first in USD, then choose it under **US securities price provider** and click sync. This calls Alpha Vantage's raw `TIME_SERIES_DAILY` endpoint (most recent ~100 sessions under the compact setting). The feed is not automatically scheduled or guaranteed real-time. Raw prices **must not be mistaken for dividend- or split-adjusted total returns**; observe provider usage limits and licensing terms. NGX and other global markets require separately authorized market data integrations.
+
 ## Optional AI and ML
 
 To enable external explanations, add a supported model ID to `WEALTH_LLM_MODEL` and a server-side `OPENAI_API_KEY` in your local `.env`. The AI workspace requires an explicit opt-in each time. It transmits only the question, aggregate financial metrics and review triggers, not raw brokerage transactions. Without credentials or consent, local deterministic briefings remain available. **Only use this if you accept that the disclosed aggregates will be processed externally.**
