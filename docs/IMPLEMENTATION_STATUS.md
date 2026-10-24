@@ -17,8 +17,14 @@ The repository contains an executable baseline for all fifteen modules. **A live
 | 11 | Decision Journal | Decision thesis, invalidation, benchmark and reviewed outcome; behavioural tags | Working journal; small sample may not support statistical inference |
 | 12 | Rebalancing | Target drift and no-sell allocation of new capital | Working; transaction costs and practical order sizing missing |
 | 13 | Financial Digital Twin | Combined one-step asset loss, emergency expense and income disruption | Working stress baseline; no correlated temporal simulation |
-| 14 | AI Wealth Analyst | Explainable, deterministic evidence card and prioritized review triggers | Baseline only. No generative AI or autonomous actions |
-| 15 | Strategy Backtesting | Net-of-assumed-fees total return, holdout benchmark comparison, drawdown | Working on supplied returns; complete point-in-time trade engine missing |
+| 14 | AI Wealth Analyst | Deterministic evidence card, opt-in externally generated explanation via Responses API | Working local baseline; external provider requires explicit consent/credentials and generated prose is non-authoritative |
+| 15 | Strategy Backtesting | Net-of-assumed-fees total return, holdout benchmark comparison, drawdown, chronological binary ML model evaluation | Working on supplied data; no full execution simulation or calibrated trading model |
+
+## Optional machine learning and AI
+
+A `/api/ml/evaluate` endpoint requires at least 100 dated feature/outcome rows, purges a user-declared future-label horizon from the development window, fits logistic regression on the earlier observations, and compares it with a fixed-probability baseline on a later holdout. Point-in-time feature timestamps, selection bias and trade feasibility remain user-supplied responsibilities.
+
+The analyst remains fully local unless an operator configures a server-side API key and model, and explicitly consents for that one question. Only aggregate metrics, review triggers and the submitted question leave the application. No account credentials or raw trades are transmitted by the built-in adapter.
 
 ## Data sources in the initial release
 
