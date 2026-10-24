@@ -4,7 +4,7 @@
 
 A completely new Python/HTML/CSS/JavaScript application designed to help an individual understand assets and liabilities, model financial futures, evaluate NGX and global investments, measure risk, allocate capital and improve decisions through evidence and feedback.
 
-The application includes **15 wealth intelligence modules**, a canonical financial database, an authentication layer, and a responsive financial workspace. This is a research/planning application, **not a brokerage or execution platform**. It does not automatically fetch live stock prices and does not use pretrained financial prediction models. The maturity of each feature is documented explicitly in [Implementation Status](docs/IMPLEMENTATION_STATUS.md).
+The application includes **15 wealth intelligence modules**, a canonical financial database, an authentication layer, and a responsive financial workspace. This is a research/planning application, **not a brokerage or execution platform**. It does not automatically fetch live stock prices. It includes opt-in external LLM explanations and a time-split ML evaluation workflow, but does not bundle a trained investment prediction model. The maturity of each feature is documented explicitly in [Implementation Status](docs/IMPLEMENTATION_STATUS.md).
 
 ## Launch locally (Windows PowerShell)
 
@@ -97,10 +97,10 @@ These are illustrative prices for a fictional ticker. Instruments must be regist
 | 11 | Investment Decision Journal | Thesis, invalidation conditions, outcome review and mistake tracking |
 | 12 | Portfolio Rebalancing | Contribution-only allocation and target drift |
 | 13 | Personal Financial Digital Twin | One-step portfolio shock + lost income + emergency expense |
-| 14 | AI Wealth Analyst | Deterministic evidence-based briefing. External LLM not wired yet |
-| 15 | Strategy Backtesting & Model Governance | Chronological holdout benchmark comparison and drawdowns |
+| 14 | AI Wealth Analyst | Local deterministic evidence briefing; optional, per-question-consented OpenAI response |
+| 15 | Strategy Backtesting & Model Governance | Chronological holdout benchmark comparison, drawdowns and embargoed binary ML evaluation |
 
-**Important:** A calculator working with user-entered assumptions is not evidence of future returns. The AI Analyst provides deterministic evidence summaries in this iteration; it does **not** generate text with an LLM, place trades or train proprietary models. Data integration, advanced scenario engines and validation are tracked separately in the design documents.
+**Important:** A calculator working with user-entered assumptions is not evidence of future returns. The AI Analyst provides deterministic evidence summaries by default and can optionally call an externally configured LLM **only after explicit per-question consent**. A separate model evaluation endpoint trains a binary classifier on user-supplied, date-ordered data with a chronological gap and checks it against a no-skill baseline; it does not deploy a trading model. Neither capability places trades. Data integration, advanced scenario engines and validation are tracked separately in the design documents.
 
 ## Project structure
 
@@ -140,6 +140,12 @@ python -m pytest -q
 ```
 
 GitHub Actions runs pytest, Python bytecode compilation and `node --check` on the frontend JavaScript.
+
+## Optional AI and ML
+
+To enable external explanations, add a supported model ID to `WEALTH_LLM_MODEL` and a server-side `OPENAI_API_KEY` in your local `.env`. The AI workspace requires an explicit opt-in each time. It transmits only the question, aggregate financial metrics and review triggers, not raw brokerage transactions. Without credentials or consent, local deterministic briefings remain available. **Only use this if you accept that the disclosed aggregates will be processed externally.**
+
+The Strategy Validation workspace also accepts a chronologically dated numeric feature matrix and binary future-outcome labels. The `/api/ml/evaluate` endpoint trains a standardized logistic regression on earlier rows, purges an embargo horizon, compares against a constant-probability baseline and reports Brier score, accuracy and ROC AUC on later rows. It requires at least 100 observations; users must verify labels and point-in-time feature availability before interpreting the results.
 
 ## Security and data limitations
 
