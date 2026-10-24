@@ -15,7 +15,7 @@ All business endpoints require the signed owner session and state-changing reque
 | Tax | `GET/POST /api/tax-rules`, `POST /api/net-return` |
 | Simulation | `POST /api/forecast`, `POST /api/twin/stress`, `POST /api/opportunity` |
 | Journal | `GET/POST /api/decisions`, `POST /api/decisions/{id}/review` |
-| Decision & research | `GET /api/analyst/brief`, `POST /api/backtest` |
+| Decision & research | `GET /api/analyst/brief`, `POST /api/analyst/ask` (explicit consent), `POST /api/backtest`, `POST /api/ml/evaluate` |
 | Discovery | `GET /api/modules` |
 
 `POST /api/import/prices`: multipart upload field `upload`, UTF-8 CSV with the headers `symbol,exchange,date,close,source`. The `source` field is optional. Maximum 2 MB, 5000 price rows. `symbol+exchange` must already exist, dates ISO-8601 and not in the future, closes positive. Every row is validated before any write.
