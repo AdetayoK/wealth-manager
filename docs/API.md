@@ -6,7 +6,7 @@ All business endpoints require the signed owner session and state-changing reque
 |---|---|
 | Account and holdings | `GET/POST /api/accounts`, `GET/POST /api/instruments`, `GET /api/portfolio`, `GET /api/holdings` |
 | Ledger | `POST /api/cash`, `POST /api/transfers`, `GET/POST /api/trades` |
-| Prices and FX | `POST /api/prices`, `POST /api/fx`, `POST /api/import/prices` |
+| Prices and FX | `POST /api/prices`, `POST /api/fx`, `POST /api/import/prices`, `POST /api/providers/us-daily-sync` |
 | Balance sheet | `POST /api/balance-items`, `GET /api/quality`, `GET /api/health-score` |
 | Planning | `GET/POST /api/goals`, `POST /api/cash-plans`, `GET /api/liquidity` |
 | Analytics | `GET /api/risk`, `POST /api/allocation/compare`, `POST /api/rebalance` |
