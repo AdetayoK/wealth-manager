@@ -440,13 +440,23 @@ async function viewAnalyst(head) {
     '<p>Grounded checks against actual portfolio, risk, liquidity and data completeness. No fabricated live market quotes.</p></div></div>'+
     '<div class="grid-two">'+panel(insightList(brief.recommended_reviews),"Recommended investigations")+
     panel(displayPairs(brief.summary),"Verified source calculations")+"</div>"+
+    section("Ask the research analyst","Opt-in external LLM explanation — the deterministic briefing remains private")+
+    form("analyst-form","Generate a grounded explanation",[
+      field("question","Question about your financial position","textarea","What should I investigate to improve my wealth plan?",{wide:true}),
+      field("consent_to_external_processing","Share aggregate computed figures with external model?","select","false",{
+        options:[["false","No — keep data local"],["true","Yes — I consent to sending the question, aggregate net worth/liquidity/risk metrics and review triggers"]],
+        wide:true
+      }),
+    ],"Generate research explanation")+
     section("Source contracts","Inspect the authoritative calculations")+
     panel(table(["Dataset endpoint","What it answers"],
       brief.source_paths.map((p)=>[p,"Computed from the recorded financial ledger"])),"Evidence lineage")+
-    note(brief.disclosure)+
-    panel('<p>The current implementation is intentionally deterministic and privacy-preserving. '+
-    'Generative model integration, document retrieval, tool grounding, prompt-injection controls, '+
-    'evaluation and citation verification are separate production requirements.</p>',"AI readiness");
+    note(brief.disclosure)+note("An external AI key and model name must be set in the server environment. Generative explanations are not authoritative calculations, verified citations or trade instructions.");
+  bindCalc("analyst-form","/analyst/ask",(v)=>{
+    if(v.consent_to_external_processing!=="true")throw new Error("Explicit external-processing consent is required.");
+    return {question:v.question,consent_to_external_processing:true};
+  },(r)=>panel('<p style="white-space:pre-wrap">'+esc(r.answer)+'</p>',"LLM research output")+
+     note("Data shared: "+r.external_data_shared+". "+r.disclaimer));
 }
 async function viewBacktest(head) {
   $("content").innerHTML=head+form("backtest-form","Strategy experiment • chronological holdout",[
@@ -455,7 +465,16 @@ async function viewBacktest(head) {
     field("fee_pct","Estimated cost per period (%)","number","0",{min:0,max:100,step:"any"}),
     field("train_fraction","Development share (0.5–0.9)","number","0.7",{min:.5,max:.9,step:.05}),
   ],"Evaluate holdout performance")+
-  note("The tool cannot detect upstream look-ahead bias, survivorship bias, inaccurate market data or impossible order fills. At least 12 aligned periods are required.");
+  section("ML research validation","Fit a logistic classifier on time-ordered, pre-labelled features; compare to a no-skill baseline")+
+  form("ml-form","Chronological ML evaluation",[
+    field("feature_names","Comma-separated numeric feature names","text","momentum,quality",{wide:true}),
+    field("dates","ISO dates in ascending order, comma-separated","textarea","",{wide:true}),
+    field("features","Numeric feature matrix as JSON arrays, e.g. [[0.1,2],[0.4,3]]","textarea","",{wide:true}),
+    field("labels","Binary future outcomes 0/1 separated by commas","textarea","",{wide:true}),
+    field("label_horizon","Embargo in observation rows","number","5",{min:1,max:60}),
+    field("holdout_fraction","Holdout proportion","number","0.25",{min:.15,max:.4,step:.05}),
+  ],"Evaluate classifier")+
+  note("ML validation requires 100+ dated observations, future-outcome labels, confirmed point-in-time feature availability and a chronological embargo. It does not predict a specific security or place trades.");
   bindCalc("backtest-form","/backtest",(v)=>{
     const values=(key)=>v[key].split(/[\s,;]+/).filter(Boolean).map((x)=>numeric(x,key));
     return {strategy_pct:values("strategy_pct"),benchmark_pct:values("benchmark_pct"),
@@ -464,4 +483,19 @@ async function viewBacktest(head) {
     Object.entries(r.segments).map(([k,x])=>[k,pct(x.strategy.total_return_pct),
       pct(x.benchmark.total_return_pct),pct(x.strategy.max_drawdown_pct),
       pct(x.average_excess_pct_per_period,3)])) + note(r.caveats.join(" ")));
+  bindCalc("ml-form","/ml/evaluate",(v)=>{
+    let features;
+    try{features=JSON.parse(v.features);}catch(e){throw new Error("Feature matrix must be a JSON array of numeric arrays.");}
+    return {feature_names:v.feature_names.split(",").map(x=>x.trim()).filter(Boolean),
+      dates:v.dates.split(/[\s,;]+/).filter(Boolean),
+      features,labels:v.labels.split(/[\s,;]+/).filter(Boolean).map((x)=>numeric(x,"label")),
+      label_horizon:numeric(v.label_horizon,"label horizon"),
+      holdout_fraction:numeric(v.holdout_fraction,"holdout")};
+  },(r)=>'<div class="metric-row">'+
+    '<div class="mini-metric"><label>Model Brier loss</label><strong>'+num(r.metrics.model_brier,5)+'</strong></div>'+
+    '<div class="mini-metric"><label>Baseline Brier loss</label><strong>'+num(r.metrics.baseline_brier,5)+'</strong></div>'+
+    '<div class="mini-metric"><label>Holdout ROC AUC</label><strong>'+num(r.metrics.holdout_roc_auc,3)+'</strong></div></div>'+
+    '<p>'+(r.beats_baseline_on_brier?'Model beat the constant baseline in this single holdout.':'Model did not beat the constant baseline on holdout Brier score.')+'</p>'+
+    table(["Feature","Standardized coefficient"],r.standardized_coefficients.map((x)=>[x.feature,num(x.coefficient,4)]))+
+    note(r.warnings.join(" ")));
 }
