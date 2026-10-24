@@ -138,7 +138,7 @@ def balance_sheet(db: Session, as_of: date | None = None) -> dict:
     by_class: dict[str, Decimal] = defaultdict(lambda: ZERO)
     by_currency: dict[str, Decimal] = defaultdict(lambda: ZERO)
 
-    def add(label: str, kind: str, currency: str, value: Decimal, source: str, stale_on: date | None):
+    def add(label: str, kind: str, currency: str, value: Decimal, source: str, stale_on: date | None, stale_after_days: int = 7):
         rate, rate_date = fx_to_ngn(db, currency, as_of)
         if rate is None:
             issues.append({"type": "MISSING_FX", "name": label, "currency": currency})
@@ -146,7 +146,7 @@ def balance_sheet(db: Session, as_of: date | None = None) -> dict:
         if rate_date and (as_of - rate_date).days > 7 and currency != "NGN":
             issues.append({"type": "STALE_FX", "name": label, "currency": currency, "date": str(rate_date)})
         translated = value * rate
-        if stale_on and (as_of - stale_on).days > 7:
+        if stale_on and (as_of - stale_on).days > stale_after_days:
             issues.append({"type": "STALE_PRICE", "name": label, "date": str(stale_on)})
         item = {
             "name": label, "class": kind, "currency": currency,
@@ -180,9 +180,9 @@ def balance_sheet(db: Session, as_of: date | None = None) -> dict:
 
     for item in db.scalars(select(BalanceItem).where(BalanceItem.valued_on <= as_of)).all():
         add(item.name, "LIABILITY" if item.kind == "LIABILITY" else item.category.upper(),
-            item.currency, dec(item.amount), "manual other asset/liability", item.valued_on)
+            item.currency, dec(item.amount), "manual other asset/liability", item.valued_on, 180)
 
-    total_assets = sum((dec(r["value_ngn"]) for r in assets), ZERO)
+    if not assets and not liabilities and not issues:\n        issues.append({"type": "INFO", "name": "No financial records valued yet"})\n\n    total_assets = sum((dec(r["value_ngn"]) for r in assets), ZERO)
     total_liabs = sum((dec(r["value_ngn"]) for r in liabilities), ZERO)
     worth = total_assets - total_liabs
     rate, rate_date = fx_to_ngn(db, "USD", as_of)
@@ -197,7 +197,7 @@ def balance_sheet(db: Session, as_of: date | None = None) -> dict:
         "allocation_ngn": {k: money(v) for k, v in sorted(by_class.items())},
         "currency_exposure_ngn": {k: money(v) for k, v in sorted(by_currency.items())},
         "data_issues": issues,
-        "complete": not any(i["type"].startswith("MISSING") for i in issues),
+        "complete": bool(assets or liabilities) and not any(i["type"].startswith("MISSING") for i in issues),
         "disclosure": "Unpriced or unconverted holdings are excluded, not valued at zero. Values are not investment performance.",
     }
 
