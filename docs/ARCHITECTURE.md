@@ -36,7 +36,7 @@ All persisted money uses SQLAlchemy Numeric/Decimal. JSON financial output is ro
 
 `Browser UI → secured /api routes → domain services → pure analytics / SQLAlchemy → SQLite`.
 
-`app/finance.py`: accounting and valuation. `app/analytics.py`: pure research and numerical methods. `app/intelligence.py`: data-backed orchestration across all 15 features. `app/api.py`: typed contracts and authorization. `app/main.py`: initialization, session middleware and static assets. No external market API keys are required for core functionality.
+`app/finance.py`: accounting and valuation. `app/analytics.py`: pure research and numerical methods. `app/intelligence.py`: data-backed orchestration across all 15 features. `app/api.py`: typed contracts and authorization. `app/main.py`: initialization, session middleware and static assets. No external market API keys are required for core functionality. A manually triggered Alpha Vantage adapter can fetch raw US daily closes for a selected USD equity/US-listed ETF when an optional provider key is configured; it never claims dividend-adjusted returns.
 
 ## Security baseline
 
