@@ -182,7 +182,10 @@ def balance_sheet(db: Session, as_of: date | None = None) -> dict:
         add(item.name, "LIABILITY" if item.kind == "LIABILITY" else item.category.upper(),
             item.currency, dec(item.amount), "manual other asset/liability", item.valued_on, 180)
 
-    if not assets and not liabilities and not issues:\n        issues.append({"type": "INFO", "name": "No financial records valued yet"})\n\n    total_assets = sum((dec(r["value_ngn"]) for r in assets), ZERO)
+    if not assets and not liabilities and not issues:
+        issues.append({"type": "INFO", "name": "No financial records valued yet"})
+
+    total_assets = sum((dec(r["value_ngn"]) for r in assets), ZERO)
     total_liabs = sum((dec(r["value_ngn"]) for r in liabilities), ZERO)
     worth = total_assets - total_liabs
     rate, rate_date = fx_to_ngn(db, "USD", as_of)
